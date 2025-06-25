@@ -13,104 +13,29 @@ HTML = '''<!DOCTYPE html>
   body { background:#121212;color:#e0e0e0;font-family:sans-serif;margin:20px auto;max-width:600px;padding:0 15px;}
   h2,h3{color:#bb86fc;text-align:center;}
   form{background:#1f1f1f;padding:20px;border-radius:12px;box-shadow:0 0 12px #3700b3;margin-bottom:20px;}
-  
-  /* Conteneur centré pour URL et Chromecast */
-  .centered-inputs {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* centre horizontalement */
-    max-width: 400px;
-    margin: 0 auto 20px auto; /* centre horizontal et marge en bas */
-  }
-  .centered-inputs label,
-  .centered-inputs input,
-  .centered-inputs select {
-    width: 100%;
-    margin-bottom: 12px;
-    text-align: center; /* centre le texte dans les labels */
-  }
-
-  label{font-weight:600;}
-  input,select{
-    padding:10px;
-    border-radius:6px;
-    border:1px solid #333;
-    background:#2c2c2c;
-    color:#e0e0e0;
-  }
-
-  /* Centrer le bouton Caster */
-  button[name="action"][value="cast"] {
-    display: block;
-    margin: 0 auto;
-    background:#bb86fc;
-    color:#121212;
-    border:none;
-    padding:12px 25px;
-    border-radius:8px;
-    font-weight:700;
-    cursor:pointer;
-  }
-  button[name="action"][value="cast"]:hover {
-    background:#9b67e0;
-  }
-
-  button {
-    background:#bb86fc;
-    color:#121212;
-    border:none;
-    padding:12px 25px;
-    border-radius:8px;
-    font-weight:700;
-    cursor:pointer;
-    margin:5px;
-  }
+  label{display:block;margin-bottom:6px;font-weight:600;}
+  input,select{width:100%;padding:10px;margin-bottom:18px;border-radius:6px;border:1px solid #333;background:#2c2c2c;color:#e0e0e0;}
+  button{background:#bb86fc;color:#121212;border:none;padding:12px 25px;border-radius:8px;font-weight:700;cursor:pointer;margin:5px;}
   button:hover{background:#9b67e0;}
   .message{background:#2a2a2a;border-left:5px solid #bb86fc;padding:15px;border-radius:8px;font-weight:600;}
-  .now {
-    text-align:center;
-    margin-bottom:20px;
-  }
-  .now img{
-    max-width:100%;
-    border-radius:8px;
-  }
-  .recommend {
-    display:flex;
-    flex-wrap:wrap;
-    gap:15px;
-    justify-content:center;
-  }
-  .rec-item{
-    background:#1f1f1f;
-    padding:10px;
-    border-radius:8px;
-    width:180px;
-    text-align:center;
-  }
-  .rec-item img{
-    width:100%;
-    border-radius:6px;
-  }
-  @media(max-width:600px){
-    .rec-item{width:48%}
-  }
+  .now {text-align:center;margin-bottom:20px;}
+  .now img{max-width:100%;border-radius:8px;}
+  .recommend {display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
+  .rec-item{background:#1f1f1f;padding:10px;border-radius:8px;width:180px;text-align:center;}
+  .rec-item img{width:100%;border-radius:6px;}
+  @media(max-width:600px){.rec-item{width:48%}}
 </style></head><body>
 
+<h2>Chromecast YouTube Controller</h2>
 <form method="POST">
-
-  <div class="centered-inputs">
-    <label for="url">URL YouTube :</label>
-    <input id="url" type="url" name="url" placeholder="https://...watch?v=..." {% if not video_playing %}required{% endif %} value="{{ current_url or '' }}">
-
-    <label for="device">Chromecast :</label>
-    <select id="device" name="device" required>
-      {% for name in devices %}
-      <option value="{{name}}" {% if name==selected_device %}selected{% endif %}>{{name}}</option>
-      {% endfor %}
-    </select>
-  </div>
-
+  <label>URL YouTube :</label>
+  <input type="url" name="url" placeholder="https://www.youtube.com/watch?v=..." {% if not video_playing %}required{% endif %} value="{{ current_url or '' }}">
+  <label>Chromecast :</label>
+  <select name="device" required>
+    {% for name in devices %}
+    <option value="{{name}}" {% if name==selected_device %}selected{% endif %}>{{name}}</option>
+    {% endfor %}
+  </select>
   <button name="action" value="cast">Caster</button>
 </form>
 
@@ -119,7 +44,7 @@ HTML = '''<!DOCTYPE html>
   <h3>En cours sur <b>{{selected_device}}</b></h3>
   <img src="{{current_thumb}}" alt="vignette">
   <p><strong>{{ current_title }}</strong></p>
-  <form method="POST" style="text-align:center;">
+  <form method="POST">
     <input type="hidden" name="device" value="{{selected_device}}">
     <button name="action" value="pause">⏸ Pause</button>
     <button name="action" value="play">▶️ Play</button>
@@ -136,7 +61,7 @@ HTML = '''<!DOCTYPE html>
 <div class="recommend">
   {% for r in recommendations %}
   <div class="rec-item">
-    <img src="{{r.thumbnail}}" alt="">
+    <img src="{{r.thumbnail}}" alt="vignette">
     <p>{{r.title}}</p>
     <form method="POST">
       <input type="hidden" name="url" value="{{r.url}}">
@@ -226,37 +151,37 @@ def index():
                         cast.set_volume(vol)
                         message = f"🔉 {int(vol * 100)}%"
                     elif action == "seek_forward":
-                        new_pos = mc.status.current_time + 30
-                        mc.seek(new_pos)
-                        message = f"⏩ +30s"
+                        # avancer de 30 secondes
+                        pos = mc.status.current_time or 0
+                        mc.seek(pos + 30)
+                        message = "⏩ Avance de 30s"
                     elif action == "seek_back":
-                        new_pos = max(0, mc.status.current_time - 30)
-                        mc.seek(new_pos)
-                        message = f"⏪ -30s"
+                        # reculer de 30 secondes (pas en dessous de 0)
+                        pos = mc.status.current_time or 0
+                        mc.seek(max(0, pos - 30))
+                        message = "⏪ Recul de 30s"
                     video_playing, selected = True, dev
                 else:
                     message = "❌ Diffusion non active sur cet appareil."
 
-    if cast_history:
+    # Génération des recommandations à partir des "entries" de la vidéo courante
+    if current_url:
         try:
             with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-                for past_url in reversed(cast_history):
-                    info = ydl.extract_info(past_url, download=False)
-                    related = info.get("related_videos", [])[:3]
-                    for r in related:
-                        video_id = r.get("url")
-                        if video_id:
-                            full_url = f"https://www.youtube.com/watch?v={video_id}"
-                            if full_url != current_url and full_url not in cast_history:
-                                recommendations.append({
-                                    'url': full_url,
-                                    'title': r.get('title', 'Vidéo recommandée'),
-                                    'thumbnail': f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
-                                })
-                    if len(recommendations) >= 6:
-                        break
+                info = ydl.extract_info(current_url, download=False)
+                entries = info.get('entries') or []
+                for e in entries[:6]:
+                    video_id = e.get('id')
+                    if video_id:
+                        full_url = f"https://www.youtube.com/watch?v={video_id}"
+                        if full_url != current_url:
+                            recommendations.append({
+                                'url': full_url,
+                                'title': e.get('title', 'Vidéo recommandée'),
+                                'thumbnail': e.get('thumbnail', f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg")
+                            })
         except Exception as e:
-            print("Erreur lors du chargement des recommandations historiques :", e)
+            print("Erreur recommandations :", e)
 
     return render_template_string(HTML,
         devices=cast_devices.keys(),
